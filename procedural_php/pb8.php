@@ -2,7 +2,6 @@
 
 $failedOrders = []; //Logs potential errors
 
-
 $stores = [
     [
         "name" => "UK Store Alex-Way",
@@ -94,10 +93,12 @@ foreach ($orders as $order) {
     $store_prod_price = &$store["price"];
 
     if ($store_prod_stock <= 0) {
+        $order_status = "CANCELLED!";
         $failedOrders[] = [
             "Product Name" => $store_prod_name,
             "Error Type" => "Failed to carry out the order.",
-            "Reason" => "Insufficient stock of the product."
+            "Reason" => "Insufficient stock of the product.",
+            "Current Order Status" => $order_status
         ];
         continue;
     }
@@ -105,6 +106,7 @@ foreach ($orders as $order) {
     // Processing the order
     if ($store_prod_stock - $customerOrder_product_quantity < 0) {
         $order_status = "CANCELLED!";
+        $total_price = 0.00;
         $failedOrders[] =  [
             "Product Name" => $store_prod_name,
             "Product Stock" => $store_prod_stock,
@@ -114,37 +116,52 @@ foreach ($orders as $order) {
             "Current Order Status" => $order_status
         ];
     } else {
-        if (array_search($customer_id, $processedCustomer_ids) === false) {
-            $processedCustomer_ids[] = $customer_id; //adds the current customer_id to the list
-        }
-        $store_prod_stock -= $customerOrder_product_quantity; //processes the reduction of the stock
-        if (array_search($customer_id, $processedCustomer_ids)) {
+        $customerIndex = array_search($customer_id, $processedCustomer_ids);
+
+        if ($customerIndex !== false) {
+            // Customer ID already processed
             $total_price += $store_prod_price * $customerOrder_product_quantity;
-            $customer_cart[][] = ["Product Name" => $store_prod_name, "Purchased Qauntity" => $customerOrder_product_quantity, "Bill" => $total_price]; //dynamically append into cart if the user has performed a transaction before
+            $customer_cart[] = [
+                "Product Name" => $store_prod_name,
+                "Purchased Quantity" => $customerOrder_product_quantity,
+                "Bill" => $store_prod_price * $customerOrder_product_quantity
+            ]; // Dynamically append to cart
             $order_status = "COMPLETED!";
         } else {
-            $customer_cart = ["Product Name" => $store_prod_name, "Purchased Qauntity" => $customerOrder_product_quantity];
-        }        // echo "Updated Product = " . $store_prod_name . "<br>";
+            // New customer ID
+            $processedCustomer_ids[] = $customer_id; // Add the customer to the processed list
+            $total_price = $store_prod_price * $customerOrder_product_quantity;
+            $customer_cart = [
+                [
+                    "Product Name" => $store_prod_name,
+                    "Purchased Quantity" => $customerOrder_product_quantity,
+                    "Bill" => $total_price
+                ]
+            ];
+            $order_status = "COMPLETED!";
+        }
     }
-
     $index++;
 }
 
+
+echo "<h3> Clients</h3>";
+echo "<pre>";
+print_r($customers);
+echo "</pre>";
+
+echo "<h3> Clients' Orders</h3>";
 echo "<pre>";
 print_r($orders);
 echo "</pre>";
 
 
-// echo "<h3> Updated Store Inventory</h3>";
-// echo "<pre>";
-// print_r($stores);
-// echo "</pre>";
+echo "<h3> Updated Store Inventory</h3>";
+echo "<pre>";
+print_r($stores);
+echo "</pre>";
 
-// echo "<h3> Failed Orders</h3>";
-// echo "<pre>";
-// print_r($failedOrders);
-// echo "</pre>";
-
-// echo "<pre>";
-// print_r($stores[1]["name"]);
-// echo "</pre>";
+echo "<h3> Failed Orders</h3>";
+echo "<pre>";
+print_r($failedOrders);
+echo "</pre>";
